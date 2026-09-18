@@ -5,14 +5,22 @@ import { ViewOnlyProvider } from '../../providers/viewOnlyProvider';
 import { selectionContext } from '../../context/selection';
 import { pathContext } from '../../context/path';
 import { File } from '../../models/file';
-import { TreeItemCollapsibleState, Uri } from 'vscode';
+import { TreeItemCollapsibleState, Uri, ExtensionContext } from 'vscode';
 import * as comparer from '../../services/comparer';
+import { globalState } from '../../services/globalState';
 
 suite('compareWithSelected', () => {
   let provider: CompareFoldersProvider;
   let showDiffsStub: sinon.SinonStub;
 
   setup(() => {
+    globalState.init({
+      extension: { packageJSON: { version: '0.30.0' } },
+      globalState: {
+        get: () => [],
+        update: () => Promise.resolve(),
+      },
+    } as unknown as ExtensionContext);
     selectionContext.clear();
     const onlyInA = new ViewOnlyProvider();
     const onlyInB = new ViewOnlyProvider();
