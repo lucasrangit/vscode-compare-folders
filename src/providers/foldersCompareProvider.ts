@@ -417,7 +417,7 @@ export class CompareFoldersProvider extends BaseViewProvider {
       if (this.emptyState) {
         children.push(emptyStateChild);
       } else if (this._diffs) {
-        const tree = build(this._diffs.distinct, pathContext.mainPath);
+        const tree = build(this._diffs.distinct, pathContext.mainPath, this.getViewVersion());
         children.push(...tree.treeItems);
       }
 

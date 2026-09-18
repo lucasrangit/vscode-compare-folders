@@ -6,12 +6,15 @@ import { FileType, FileConstructorArgs } from './file.types';
 export class File extends TreeItem {
   public readonly type: FileType;
   public readonly children?: File[];
+  public parent?: File | undefined;
   public relativePath?: string | undefined;
 
   constructor(args: FileConstructorArgs) {
     super(args.label, args.collapsibleState);
 
+    this.id = args.id;
     this.type = args.type;
+    this.parent = args.parent;
     this.command = args.command;
     this.children = args.children;
     this.resourceUri = args.resourceUri;
@@ -37,7 +40,7 @@ export class File extends TreeItem {
     } : undefined;
   }
 
-  get hasIcon() {
+  get hasIcon(): boolean {
     return ['open', 'empty', 'root'].includes(this.type);
   }
 }
