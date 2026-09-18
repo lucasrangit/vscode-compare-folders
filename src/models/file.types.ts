@@ -10,6 +10,8 @@ export type TreeItemCommand = Command & {
 export interface FileConstructorArgs {
   label: string;
   type: FileType;
+  id?: string;
+  parent?: File;
   collapsibleState?: TreeItemCollapsibleState;
   command?: TreeItemCommand;
   children?: File[];
