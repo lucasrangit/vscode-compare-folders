@@ -12,7 +12,7 @@ export class ViewOnlyProvider extends BaseViewProvider {
     super();
   }
 
-  update(diffs: ViewOnlyPaths, rootPath: string) {
+  update(diffs: ViewOnlyPaths, rootPath: string): void {
     this.diffs = diffs;
     this.rootPath = rootPath;
     this._onDidChangeTreeData.fire(null);
@@ -20,28 +20,31 @@ export class ViewOnlyProvider extends BaseViewProvider {
   }
 
   getTreeItem(element: File): TreeItem {
-		return element;
+    return element;
   }
 
   getChildren(element?: File): File[] {
     if (element && element.children) {
       return element.children;
     }
-    const {treeItems} = build(this.diffs, this.rootPath);
+    const { treeItems } = build(this.diffs, this.rootPath, this.getViewVersion());
     let children: Array<File> = [];
     if (this.rootPath && this.showPath) {
-      children = [
-        new File({
-          label: this.rootPath,
-          type: 'root',
-          collapsibleState: TreeItemCollapsibleState.Expanded,
-          children: treeItems
-        })
-      ];
+      const rootFile = new File({
+        label: this.rootPath,
+        id: `root_${this.rootPath}`,
+        type: 'root',
+        collapsibleState: TreeItemCollapsibleState.Expanded,
+        children: treeItems,
+      });
+      for (const item of treeItems) {
+        item.parent = rootFile;
+      }
+      children = [rootFile];
     } else {
       children = treeItems;
     }
 
     return children;
-	}
+  }
 }
