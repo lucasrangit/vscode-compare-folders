@@ -27,14 +27,7 @@ export class MockTreeView implements TreeView<File> {
     this.selectionEmitter.fire({ selection: selectedItems });
   }
 
-  reveal(element: File, options?: { select?: boolean; focus?: boolean; expand?: boolean | number }): Thenable<void> {
-    if (options?.select === false) {
-      this.selection = [];
-      this.selectionEmitter.fire({ selection: [] });
-    } else if (options?.select === true) {
-      this.selection = [element];
-      this.selectionEmitter.fire({ selection: [element] });
-    }
+  reveal(): Thenable<void> {
     return Promise.resolve();
   }
 

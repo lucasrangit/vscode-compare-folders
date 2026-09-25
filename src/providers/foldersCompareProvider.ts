@@ -36,7 +36,6 @@ import { showErrorMessage, showErrorMessageWithMoreInfo, showInfoMessageWithTime
 import { showUnaccessibleWarning } from '../services/validators';
 import { uiContext, type DiffViewMode } from '../context/ui';
 import { BaseViewProvider } from './baseViewProvider';
-import { treeViewSelectionManager } from '../services/treeViewSelectionManager';
 import { selectionContext } from '../context/selection';
 
 export class CompareFoldersProvider extends BaseViewProvider {
@@ -134,7 +133,7 @@ export class CompareFoldersProvider extends BaseViewProvider {
 
   async handleDiffResult(diffs?: CompareResult) {
     this.ignoreDifferencesList.clear();
-    treeViewSelectionManager.clearAll();
+    selectionContext.clear();
     if (!diffs) {
       return;
     }
@@ -205,7 +204,7 @@ export class CompareFoldersProvider extends BaseViewProvider {
 
   compareWithSelected = async (targetFile?: File) => {
     try {
-      const selectedFile = selectionContext.getSelectedFile();
+      const selectedFile = selectionContext.getSelectedFile(targetFile);
       if (!selectedFile || !targetFile) {
         return;
       }
@@ -305,7 +304,7 @@ export class CompareFoldersProvider extends BaseViewProvider {
   }
 
   refresh = async (resetIgnoredFiles = true, shouldShowInfoMessage = true, shouldCompareFolders = true) => {
-    treeViewSelectionManager.clearAll();
+    selectionContext.clear();
     if (resetIgnoredFiles) {
       this.ignoreDifferencesList.clear();
     }
@@ -417,7 +416,7 @@ export class CompareFoldersProvider extends BaseViewProvider {
       if (this.emptyState) {
         children.push(emptyStateChild);
       } else if (this._diffs) {
-        const tree = build(this._diffs.distinct, pathContext.mainPath, this.getViewVersion());
+        const tree = build(this._diffs.distinct, pathContext.mainPath);
         children.push(...tree.treeItems);
       }
 

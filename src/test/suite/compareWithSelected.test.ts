@@ -8,8 +8,9 @@ import { File } from '../../models/file';
 import { TreeItemCollapsibleState, Uri, ExtensionContext } from 'vscode';
 import * as comparer from '../../services/comparer';
 import { globalState } from '../../services/globalState';
+import { mockConfiguration } from './mocks/configuration';
 
-suite('compareWithSelected', () => {
+suite('Comparer - Selected Files', () => {
   let provider: CompareFoldersProvider;
   let showDiffsStub: sinon.SinonStub;
 
@@ -110,4 +111,116 @@ suite('compareWithSelected', () => {
     assert.deepStrictEqual(args[0], ['/folderA/_rename_me_first.txt', '/folderB/renamed.txt']);
     assert.strictEqual(args[1], '_rename_me_first.txt ↔ renamed.txt');
   });
+
+  test('reverses diff order when diffLayout is compared <> local', async () => {
+    pathContext.setPaths('/folderA', '/folderB');
+    const restoreConfig = mockConfiguration({ diffLayout: 'compared <> local' });
+
+    try {
+      const fileA = new File({
+        label: 'fileA.txt',
+        type: 'file',
+        collapsibleState: TreeItemCollapsibleState.None,
+        resourceUri: Uri.file('/folderA/fileA.txt'),
+      });
+
+      const fileB = new File({
+        label: 'fileB.txt',
+        type: 'file',
+        collapsibleState: TreeItemCollapsibleState.None,
+        resourceUri: Uri.file('/folderB/fileB.txt'),
+      });
+
+      selectionContext.setSelectedFile(fileA, 'onlyA');
+      await provider.compareWithSelected(fileB);
+
+      assert.strictEqual(showDiffsStub.calledOnce, true);
+      const args = showDiffsStub.firstCall.args;
+      assert.deepStrictEqual(args[0], ['/folderB/fileB.txt', '/folderA/fileA.txt']);
+    } finally {
+      restoreConfig();
+    }
+  });
+
+  test('falls back to command arguments when resourceUri is missing', async () => {
+    pathContext.setPaths('/folderA', '/folderB');
+
+    const fileA = new File({
+      label: 'fileA.txt',
+      type: 'file',
+      collapsibleState: TreeItemCollapsibleState.None,
+      command: {
+        title: 'fileA.txt',
+        command: 'compareFolders.compareFiles',
+        arguments: [['/folderA/fileA.txt', ''], 'fileA.txt'],
+      },
+    });
+
+    const fileB = new File({
+      label: 'fileB.txt',
+      type: 'file',
+      collapsibleState: TreeItemCollapsibleState.None,
+      resourceUri: Uri.file('/folderB/fileB.txt'),
+    });
+
+    selectionContext.setSelectedFile(fileA, 'onlyA');
+    await provider.compareWithSelected(fileB);
+
+    assert.strictEqual(showDiffsStub.calledOnce, true);
+    const args = showDiffsStub.firstCall.args;
+    assert.deepStrictEqual(args[0], ['/folderA/fileA.txt', '/folderB/fileB.txt']);
+  });
+
+  test('compares files when both are selected across different panels and button clicked on second file', async () => {
+    pathContext.setPaths('/folderA', '/folderB');
+
+    const fileA = new File({
+      label: 'fileA.txt',
+      type: 'file',
+      collapsibleState: TreeItemCollapsibleState.None,
+      resourceUri: Uri.file('/folderA/fileA.txt'),
+    });
+
+    const fileB = new File({
+      label: 'fileB.txt',
+      type: 'file',
+      collapsibleState: TreeItemCollapsibleState.None,
+      resourceUri: Uri.file('/folderB/fileB.txt'),
+    });
+
+    selectionContext.setSelectedFile(fileA, 'onlyA');
+    selectionContext.setSelectedFile(fileB, 'onlyB');
+    await provider.compareWithSelected(fileB);
+
+    assert.strictEqual(showDiffsStub.calledOnce, true);
+    const args = showDiffsStub.firstCall.args;
+    assert.deepStrictEqual(args[0], ['/folderA/fileA.txt', '/folderB/fileB.txt']);
+  });
+
+  test('compares files when both are selected across different panels and button clicked on first file', async () => {
+    pathContext.setPaths('/folderA', '/folderB');
+
+    const fileA = new File({
+      label: 'fileA.txt',
+      type: 'file',
+      collapsibleState: TreeItemCollapsibleState.None,
+      resourceUri: Uri.file('/folderA/fileA.txt'),
+    });
+
+    const fileB = new File({
+      label: 'fileB.txt',
+      type: 'file',
+      collapsibleState: TreeItemCollapsibleState.None,
+      resourceUri: Uri.file('/folderB/fileB.txt'),
+    });
+
+    selectionContext.setSelectedFile(fileA, 'onlyA');
+    selectionContext.setSelectedFile(fileB, 'onlyB');
+    await provider.compareWithSelected(fileA);
+
+    assert.strictEqual(showDiffsStub.calledOnce, true);
+    const args = showDiffsStub.firstCall.args;
+    assert.deepStrictEqual(args[0], ['/folderA/fileA.txt', '/folderB/fileB.txt']);
+  });
 });
+

@@ -1,4 +1,4 @@
-import { TreeItem, Uri, TreeItemCollapsibleState } from 'vscode';
+import { TreeItem, TreeItemCollapsibleState } from 'vscode';
 import { File } from '../models/file';
 import { build } from '../services/treeBuilder';
 import { BaseViewProvider } from './baseViewProvider';
@@ -27,20 +27,17 @@ export class ViewOnlyProvider extends BaseViewProvider {
     if (element && element.children) {
       return element.children;
     }
-    const { treeItems } = build(this.diffs, this.rootPath, this.getViewVersion());
+    const { treeItems } = build(this.diffs, this.rootPath);
     let children: Array<File> = [];
     if (this.rootPath && this.showPath) {
-      const rootFile = new File({
-        label: this.rootPath,
-        id: `root_${this.rootPath}`,
-        type: 'root',
-        collapsibleState: TreeItemCollapsibleState.Expanded,
-        children: treeItems,
-      });
-      for (const item of treeItems) {
-        item.parent = rootFile;
-      }
-      children = [rootFile];
+      children = [
+        new File({
+          label: this.rootPath,
+          type: 'root',
+          collapsibleState: TreeItemCollapsibleState.Expanded,
+          children: treeItems,
+        }),
+      ];
     } else {
       children = treeItems;
     }

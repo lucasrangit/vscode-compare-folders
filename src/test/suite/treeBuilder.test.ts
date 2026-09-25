@@ -52,44 +52,41 @@ suite('Tree Builder', () => {
 
     const { treeItems } = build(paths, basePath);
 
-    const folder1 = new File({
-      label: 'folder1',
-      id: 'folder_folder1',
-      type: 'folder',
-      collapsibleState: TreeItemCollapsibleState.Collapsed,
-      resourceUri: Uri.file(path.join(basePath, 'folder1')),
-      relativePath: 'folder1',
-    });
-
-    const folder2 = new File({
-      label: 'folder2',
-      id: `folder_${path.join('folder1', 'folder2')}`,
-      type: 'folder',
-      parent: folder1,
-      collapsibleState: TreeItemCollapsibleState.Collapsed,
-      resourceUri: Uri.file(path.join(basePath, 'folder1', 'folder2')),
-      relativePath: path.join('folder1', 'folder2'),
-    });
-
-    const indexHtml = new File({
-      label: 'index.html',
-      id: `file_${path.join('folder1', 'folder2', 'index.html')}`,
-      type: 'file',
-      parent: folder2,
-      collapsibleState: TreeItemCollapsibleState.None,
-      command: {
-        title: 'index.html',
-        command: COMPARE_FILES,
-        arguments: [paths[0], path.join('folder1/folder2/index.html')],
-      },
-      resourceUri: Uri.file(paths[0][0]),
-      relativePath: path.join('folder1', 'folder2', 'index.html'),
-    });
-
-    (folder2 as { children?: File[] }).children = [indexHtml];
-    (folder1 as { children?: File[] }).children = [folder2];
-
-    assert.deepStrictEqual(treeItems, [folder1]);
+    assert.deepStrictEqual(
+      treeItems,
+      [
+        new File({
+          label: 'folder1',
+          type: 'folder',
+          collapsibleState: TreeItemCollapsibleState.Collapsed,
+          children: [
+            new File({
+              label: 'folder2',
+              type: 'folder',
+              collapsibleState: TreeItemCollapsibleState.Collapsed,
+              children: [
+                new File({
+                  label: 'index.html',
+                  type: 'file',
+                  collapsibleState: TreeItemCollapsibleState.None,
+                  command: {
+                    title: 'index.html',
+                    command: COMPARE_FILES,
+                    arguments: [paths[0], path.join('folder1/folder2/index.html')]
+                  },
+                  resourceUri: Uri.file(paths[0][0]),
+                  relativePath: path.join('folder1', 'folder2', 'index.html')
+                })
+              ],
+              resourceUri: Uri.file(path.join(basePath, 'folder1', 'folder2')),
+              relativePath: path.join('folder1', 'folder2')
+            })
+          ],
+          resourceUri: Uri.file(path.join(basePath, 'folder1')),
+          relativePath: 'folder1'
+        })
+      ]
+    );
   });
 
   test('Generte diffs as list', () => {
@@ -106,7 +103,6 @@ suite('Tree Builder', () => {
       [
         new File({
           label: 'index.html',
-          id: `file_${path.join('folder1', 'subfolder', 'index.html')}`,
           type: 'file',
           collapsibleState: TreeItemCollapsibleState.None,
           command: {
@@ -116,9 +112,10 @@ suite('Tree Builder', () => {
           },
           resourceUri: Uri.file(path1),
           description: true,
-          relativePath: path.join('folder1', 'subfolder', 'index.html'),
+          relativePath: path.join('folder1', 'subfolder', 'index.html')
         }),
       ]
     );
   });
 });
+

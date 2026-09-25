@@ -9,7 +9,7 @@ export function createTreeViewWithProvider(
 ): Disposable {
   const treeView = window.createTreeView(viewId, { treeDataProvider: provider }) as TreeView<File>;
   provider.setTreeView(treeView);
-  const selectionDisposable = treeViewSelectionManager.register(viewId, treeView, provider);
+  const selectionDisposable = treeViewSelectionManager.register(viewId, treeView);
 
   return {
     dispose: (): void => {

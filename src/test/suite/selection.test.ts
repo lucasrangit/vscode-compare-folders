@@ -1,7 +1,6 @@
 import * as assert from 'assert';
 import { selectionContext } from '../../context/selection';
 import { treeViewSelectionManager } from '../../services/treeViewSelectionManager';
-import { ViewOnlyProvider } from '../../providers/viewOnlyProvider';
 import { MockTreeView } from './mocks/treeView';
 import { File } from '../../models/file';
 import { TreeItemCollapsibleState } from 'vscode';
@@ -27,27 +26,12 @@ suite('Selection Context & Manager', () => {
     assert.strictEqual(selectionContext.getSelectedViewId(), undefined);
   });
 
-  test('treeViewSelectionManager clears other tree views when selecting file in one view', () => {
-    const providerA = new ViewOnlyProvider();
+  test('treeViewSelectionManager updates selectionContext with most recent selection across tree views', () => {
     const treeViewA = new MockTreeView();
-    providerA.setTreeView(treeViewA);
-
-    const providerB = new ViewOnlyProvider();
     const treeViewB = new MockTreeView();
-    providerB.setTreeView(treeViewB);
 
-    let clearedBCount = 0;
-    let clearedACount = 0;
-
-    providerB.onDidChangeTreeData(() => {
-      clearedBCount++;
-    });
-    providerA.onDidChangeTreeData(() => {
-      clearedACount++;
-    });
-
-    const subA = treeViewSelectionManager.register('viewA', treeViewA, providerA);
-    const subB = treeViewSelectionManager.register('viewB', treeViewB, providerB);
+    const subA = treeViewSelectionManager.register('viewA', treeViewA);
+    const subB = treeViewSelectionManager.register('viewB', treeViewB);
 
     try {
       const fileA = new File({
@@ -60,7 +44,6 @@ suite('Selection Context & Manager', () => {
 
       assert.strictEqual(selectionContext.getSelectedFile(), fileA);
       assert.strictEqual(selectionContext.getSelectedViewId(), 'viewA');
-      assert.strictEqual(clearedBCount, 1);
 
       const fileB = new File({
         label: 'fileB.ts',
@@ -72,7 +55,57 @@ suite('Selection Context & Manager', () => {
 
       assert.strictEqual(selectionContext.getSelectedFile(), fileB);
       assert.strictEqual(selectionContext.getSelectedViewId(), 'viewB');
-      assert.strictEqual(clearedACount, 1);
+    } finally {
+      subA.dispose();
+      subB.dispose();
+    }
+  });
+
+  test('selectionContext retrieves other selected file when targetFile matches current selection', () => {
+    const fileA = new File({
+      label: 'fileA.ts',
+      type: 'file',
+      collapsibleState: TreeItemCollapsibleState.None,
+    });
+    const fileB = new File({
+      label: 'fileB.ts',
+      type: 'file',
+      collapsibleState: TreeItemCollapsibleState.None,
+    });
+
+    selectionContext.setSelectedFile(fileA, 'viewA');
+    selectionContext.setSelectedFile(fileB, 'viewB');
+
+    assert.strictEqual(selectionContext.getSelectedFile(fileB), fileA);
+    assert.strictEqual(selectionContext.getSelectedFile(fileA), fileB);
+  });
+
+  test('treeViewSelectionManager clears only the view whose selection becomes empty', () => {
+    const treeViewA = new MockTreeView();
+    const treeViewB = new MockTreeView();
+    const subA = treeViewSelectionManager.register('viewA', treeViewA);
+    const subB = treeViewSelectionManager.register('viewB', treeViewB);
+
+    try {
+      const fileA = new File({
+        label: 'fileA.ts',
+        type: 'file',
+        collapsibleState: TreeItemCollapsibleState.None,
+      });
+      const fileB = new File({
+        label: 'fileB.ts',
+        type: 'file',
+        collapsibleState: TreeItemCollapsibleState.None,
+      });
+
+      treeViewA.fireSelectionChange([fileA]);
+      treeViewB.fireSelectionChange([fileB]);
+
+      assert.strictEqual(selectionContext.getSelectedFile(), fileB);
+
+      treeViewB.fireSelectionChange([]);
+      assert.strictEqual(selectionContext.getSelectedFile(), fileA);
+      assert.strictEqual(selectionContext.getSelectedViewId(), 'viewA');
     } finally {
       subA.dispose();
       subB.dispose();
@@ -80,11 +113,8 @@ suite('Selection Context & Manager', () => {
   });
 
   test('treeViewSelectionManager clears selectionContext when folder item is selected', () => {
-    const provider = new ViewOnlyProvider();
     const treeView = new MockTreeView();
-    provider.setTreeView(treeView);
-
-    const sub = treeViewSelectionManager.register('viewA', treeView, provider);
+    const sub = treeViewSelectionManager.register('viewA', treeView);
 
     try {
       const folderItem = new File({
@@ -99,4 +129,48 @@ suite('Selection Context & Manager', () => {
       sub.dispose();
     }
   });
+
+  test('treeViewSelectionManager clears selection when selection becomes empty', () => {
+    const treeView = new MockTreeView();
+    const sub = treeViewSelectionManager.register('viewA', treeView);
+
+    try {
+      const file = new File({
+        label: 'fileA.ts',
+        type: 'file',
+        collapsibleState: TreeItemCollapsibleState.None,
+      });
+
+      treeView.fireSelectionChange([file]);
+      assert.strictEqual(selectionContext.getSelectedFile(), file);
+
+      treeView.fireSelectionChange([]);
+      assert.strictEqual(selectionContext.getSelectedFile(), undefined);
+      assert.strictEqual(selectionContext.getSelectedViewId(), undefined);
+    } finally {
+      sub.dispose();
+    }
+  });
+
+  test('treeViewSelectionManager clearAll clears selection context', () => {
+    const treeView = new MockTreeView();
+    const sub = treeViewSelectionManager.register('viewA', treeView);
+
+    try {
+      const file = new File({
+        label: 'test.ts',
+        type: 'file',
+        collapsibleState: TreeItemCollapsibleState.None,
+      });
+
+      selectionContext.setSelectedFile(file, 'viewA');
+      treeViewSelectionManager.clearAll();
+
+      assert.strictEqual(selectionContext.getSelectedFile(), undefined);
+      assert.strictEqual(selectionContext.getSelectedViewId(), undefined);
+    } finally {
+      sub.dispose();
+    }
+  });
 });
+
