@@ -295,6 +295,10 @@
         {
           "command": "foldersCompare.excludeFromComparison",
           "when": "false"
+        },
+        {
+          "command": "foldersCompare.compareWithSelected",
+          "when": "false"
         }
       ],
       "view/title": [
@@ -374,6 +378,11 @@
         {
           "command": "foldersCompare.excludeFromComparison",
           "when": "view =~ /^foldersCompareAppService/ && (viewItem == file || viewItem == file-parsable || viewItem == folder)"
+        },
+        {
+          "command": "foldersCompare.compareWithSelected",
+          "when": "view =~ /^foldersCompareAppService/ && (viewItem == file || viewItem == file-parsable) && foldersCompareContext.hasSelectedFile",
+          "group": "inline@1"
         }
       ]
     },
@@ -413,6 +422,11 @@
         "title": "%ext.command.excludeFromComparison.title%",
         "command": "foldersCompare.excludeFromComparison",
         "icon": "$(exclude)"
+      },
+      {
+        "title": "%ext.command.compareWithSelected.title%",
+        "command": "foldersCompare.compareWithSelected",
+        "icon": "$(diff)"
       },
       {
         "title": "%ext.command.viewParsedDiff.title%",
@@ -512,6 +526,7 @@
     "watch": "tsc -watch -p ./",
     "pretest": "yarn run compile",
     "test": "node ./out/test/runTest.js",
+    "vscode": "node scripts/run-vscode.js",
     "l10n:extract": "npx @vscode/l10n-dev export --outDir ./l10n ./src/**/*.ts",
     "l10n:validate": "node scripts/validate-l10n.js",
     "deploy": "npx vsce publish -p",
