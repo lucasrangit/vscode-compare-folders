@@ -1,5 +1,17 @@
 #!/usr/bin/env node
 
+/**
+ * Launch VS Code with this extension loaded for manual verification.
+ *
+ * Usage:
+ *   yarn install
+ *   yarn vscode
+ *   yarn vscode /path/to/folder
+ *
+ * Specific version (defaults to 'stable', matching tests):
+ *   VSCODE_VERSION=1.85.0 yarn vscode
+ */
+
 const { downloadAndUnzipVSCode } = require('@vscode/test-electron');
 const cp = require('child_process');
 const path = require('path');
@@ -7,7 +19,8 @@ const path = require('path');
 async function main() {
   try {
     const extensionDevelopmentPath = path.resolve(__dirname, '..');
-    const vscodeExecutablePath = await downloadAndUnzipVSCode('1.85.0');
+    const version = process.env.VSCODE_VERSION;
+    const vscodeExecutablePath = await downloadAndUnzipVSCode(version);
     const testDir = path.resolve(extensionDevelopmentPath, '.vscode-test');
     const userDataDir = path.join(testDir, 'user-data');
     const extensionsDir = path.join(testDir, 'extensions');
